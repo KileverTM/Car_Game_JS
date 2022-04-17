@@ -16,15 +16,18 @@
         document.body.appendChild(renderer.domElement);
          const loader = new GLTFLoader();
          var obj;
-        loader.load("zycie.gltf",function(gltf){
+        loader.load("scene.gltf",function(gltf){
              obj = gltf.scene;
-             scene.add(obj);
+             scene.add(gltf.scene);
              });
         scene.background = new THREE.Color(0xffffff);
          var light = new THREE.HemisphereLight(0xffffff,0x000000,2);
         scene.add(light);
         camera.position.set(0,20,60);
-        function animate(){ requestAnimationFrame(animate);renderer.render(scene,camera); }
+        function animate(){
+         requestAnimationFrame(animate);
+        obj.rotation.y += 0.05;
+        renderer.render(scene,camera); }
          animate();
     </script>
 
