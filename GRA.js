@@ -1,6 +1,6 @@
         // https://www.youtube.com/watch?v=hBiGFpBle7E 
         // https://r105.threejsfundamentals.org/threejs/lessons/threejs-load-gltf.html
-        
+        // https://www.youtube.com/watch?v=JhgBwJn1bQw
         
         
         
@@ -8,13 +8,23 @@
         const canvas = document.querySelector('#c');
          var scene = new THREE.Scene();
          scene.background= new THREE.Color(0,0,0);
-         scene.fog = new THREE.Fog(0x202533, -1, 100);
-         var clock = new THREE.Clock();
+         const amblight = new THREE.AmbientLight(0xffffff, 0.8);
+         scene.add(amblight);
+         const dirlight = new THREE.DirectionalLight(0xffffff , 0.9);
+         dirlight.position.set(15,30,0)
+         scene.add(dirlight);
+
+         //generowanie fizyki swiata 
+         const world = new CANNON.World();
+         world.gravity.set(0,-10,0);
+         world.broadphase = new CANNON.NaiveBroadphase();
+        world.solver.iterations = 20;
+        
          //camera
          var camera = new THREE.PerspectiveCamera( 45, window.innerWidth/window.innerHeight, 0.01, 30000 );
          camera.position.set(0,20,60);
          camera.lookAt(new THREE.Vector3(0,1,0));
-         var renderer = new THREE.WebGLRenderer({antialias: true}); 
+         var renderer = new THREE.WebGLRenderer({antialias: false}); 
          //render
          renderer.setSize(window.innerWidth,window.innerHeight);
          renderer.shadowMap.enabled = true;
@@ -24,16 +34,45 @@
 
         import {GLTFLoader} from "../GLTFLoader.js"; 
          
-
+//kontrola kamery myszką 
         var  control = new THREE.OrbitControls(camera, renderer.domElement);
          const loader = new GLTFLoader();
-         const world = new CANNON.World({
-            gravity :new CANNON.Vec3(0,-10,0)
-  
-          });
-         
         
-        function initfis(){
+         //generowanie obiektów 
+         function Gentalerza(){
+               const geometry = new THREE.BoxGeometry(1,1,1);
+
+               const color = new THREE.Color(0x151612);
+               const material = new THREE.MeshLambertMaterial({color});
+               const mesh = new THREE.Mesh(geometry, material);
+               mesh.position.set(0,0,1);
+               scene.add(mesh);
+
+               const krzt = new CANNON.Box(
+                  new CANNON.Vec3(0.5,0.5,0.5,));
+                  let massa = 5;
+                  const body = new CANNON.Body ({massa, krzt});
+                  body.position.set(0,0,1)
+                  world.addBody(body);
+               
+
+               loader.load("zycie.gltf",function(gltf){
+                  const obj = gltf.scene;
+                  scene.add(obj)});
+
+               const geometry1 = new THREE.PlaneGeometry( 10, 10 );
+               const material1 = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} );
+               const plane = new THREE.Mesh( obj, material1 );
+               scene.add( plane );
+
+
+
+
+
+
+         }
+        
+ /*       function initfis(){
 //Świat
 
          
@@ -60,6 +99,7 @@
       
 
         }
+        */
 
         
          var obj;
@@ -93,12 +133,12 @@ karton.position.y=3;
        
         function animate(){
          requestAnimationFrame(animate);
-
+Gentalerza();
          
          
          
-            initfis();
-            world.debugRenderer.update();
+            //initfis();
+            updphi();
         renderer.render(scene,camera);
       
         //callcar();
@@ -112,7 +152,12 @@ karton.position.y=3;
 
          }
 
-          
+          function updphi() {
+
+world.step(1/60);
+
+
+          }
          
 
 
