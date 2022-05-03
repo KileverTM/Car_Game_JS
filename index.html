@@ -71,14 +71,14 @@
         const Gloader = new GLTFLoader();
         groundMaterial = new CANNON.Material("groundMaterial");
         const groundShape = new CANNON.Plane();
-        const groundShape1 = Gloader.load("../model/tor21.37.gltf",(gltf)=>{
+        /* const groundShape1 = Gloader.load("../model/tor21.37.gltf",(gltf)=>{
             speederMesh = gltf.scene;
             speederMesh.scale.set(1,1,1);
             speederMesh=new CANNON.Plane();
 
     
             
-            scene.add(speederMesh);})
+            scene.add(speederMesh);})*/
         
         const groundBody = new CANNON.Body({mass:0,shape:groundShape,material:groundMaterial});
         groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
