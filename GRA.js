@@ -2,7 +2,7 @@
         const canvas = document.querySelector('#c');
          var scene = new THREE.Scene();
          scene.fog = new THREE.Fog(0x202533, -1, 100);
-         var clock = new THREE.Clock()
+         
          var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.01, 30000 );
          var renderer = new THREE.WebGLRenderer({antialias: true}); 
          renderer.setSize(window.innerWidth,window.innerHeight);
@@ -11,7 +11,7 @@
             
         document.body.appendChild(renderer.domElement);
 
-        import {GLTFLoader} from "../GLTFLoader.js"; 
+        import {GLTFLoader} from "../lib/GLTFLoader.js"; 
          
 
         var  control = new THREE.OrbitControls(camera, renderer.domElement);
