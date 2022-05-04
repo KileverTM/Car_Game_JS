@@ -100,7 +100,7 @@
             frictionEquationRelaxation:3
         });
         const speederBodyShape = new CANNON.Box(new CANNON.Vec3(0.8,0.1,0.1));
-        speederBody = new CANNON.Body({mass:100000,material:speederMaterial,shape:speederBodyShape});
+        speederBody = new CANNON.Body({mass:10,material:speederMaterial,shape:speederBodyShape});
         speederBody.position = new CANNON.Vec3(0,2,0);
         world.addBody(speederBody);
 
