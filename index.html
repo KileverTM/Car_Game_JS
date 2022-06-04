@@ -115,7 +115,7 @@
 
 
         })}
-
+        //=======================================ramp
         function createRamp(){
             const rampShape = new CANNON.Box(new CANNON.Vec3(5,1,10));
             const rampBody = new CANNON.Body({mass: 0,shape: rampShape, material: groundMaterial});
@@ -193,7 +193,7 @@
             chaseCam.position.set(0,0,0);
 
             chaseCamPivot = new THREE.Object3D();
-            chaseCamPivot.position.set(0,20,-40);
+            chaseCamPivot.position.set(0,25,-50);
 
             chaseCam.add(chaseCamPivot);
 
