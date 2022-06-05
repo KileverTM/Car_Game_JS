@@ -15,8 +15,11 @@
     <script src='https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js'></script>
     <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/2666677/CannonHelper.js'></script>
     <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/2666677/toon3d.js'></script>
+    <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
     <script type="module">
 var scene, camera, renderer, world, helper, vehicle, dt, light, lightOffset;
+let chaseCam, chaseCamPivot,car,followCam;
+
 
 init();
 
@@ -121,15 +124,22 @@ function initPhysics(){
   world.addContactMaterial(wheelGroundContactMaterial);
 
   const chassisShape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 2));
+  const chassisShape1 = new CANNON.Box(new CANNON.Vec3(0.5, 0.25, 0.5));
   const chassisBody = new CANNON.Body({ mass: 150, material: groundMaterial });
   chassisBody.angularDamping = 0.9;
-  chassisBody.addShape(chassisShape);
+  chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.01, 0));
+  chassisBody.addShape(chassisShape1, new CANNON.Vec3(0, 0.5, 0));
   chassisBody.position.set(0, 4, 0);
   helper.addVisual(chassisBody, 0x0000aa, 'car');
+  helper.addVisual(chassisShape1, 0x000000, 'car1');
   light.target = chassisBody.threemesh;
   lightOffset = chassisBody.threemesh.position.clone().sub(light.position);
+  followCam = new THREE.Object3D();
+    followCam.position.copy(camera.position);
+	scene.add(followCam);
+	followCam.parent = chassisBody.threemesh;
+       
 
- 
 
 
   const options = {
@@ -148,7 +158,7 @@ function initPhysics(){
     customSlidingRotationalSpeed: 30,
     useCustomSlidingRotationalSpeed: true
   };
-
+  chassisBody.angularDamping = 0.9;
   // Create the vehicle
   vehicle = new CANNON.RaycastVehicle({
     chassisBody: chassisBody,
@@ -156,7 +166,9 @@ function initPhysics(){
     indexUpAxis: 1,
     indexForwardAxis: 2
   });
+ 
 
+  
   options.chassisConnectionPointLocal.set(1, 0, -1);
   vehicle.addWheel(options);
 
@@ -170,6 +182,31 @@ function initPhysics(){
   vehicle.addWheel(options);
 
   vehicle.addToWorld(world);
+  
+
+const wheelBodies = [];
+vehicle.wheelInfos.forEach( function(wheel){
+  const cylinderShape = new CANNON.Cylinder(wheel.radius, wheel.radius, wheel.radius / 2, 20);
+  const wheelBody = new CANNON.Body({ mass: 1, material: wheelMaterial });
+  const q = new CANNON.Quaternion();
+  q.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
+  wheelBody.addShape(cylinderShape, new CANNON.Vec3(), q);
+  wheelBodies.push(wheelBody);
+  helper.addVisual(wheelBody, 0x111111, 'wheel');
+});
+
+// Update wheels
+world.addEventListener('postStep', function(){
+  let index = 0;
+  let r;
+  vehicle.wheelInfos.forEach(function(wheel){
+    vehicle.updateWheelTransform(index);
+    const t = wheel.worldTransform;
+    wheelBodies[index].threemesh.position.copy(t.position);
+    wheelBodies[index].threemesh.quaternion.copy(t.quaternion);
+    index++; 
+  });
+});
 
 
 
@@ -210,26 +247,11 @@ function onWindowResize( event ) {
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
-function cameraupd(){
-    var followCam = new THREE.Object3D();
-       
-        
-        camera.lookAt(vehicle.chassisBody.position);
-        
-        scene.add(followCam);
-        followCam.parent = vehicle.chassisBody.threemesh;
-        helper.shadowTarget = vehicle.chassisBody.threemesh;
+function initChaseCam(){
+    camera.position.lerp(followCam.getWorldPosition(new THREE.Vector3()), 0.05);
+	camera.lookAt(vehicle.chassisBody.threemesh.position);
 
-        
-    
-
-        
-     
-
-
-
-
-}
+        }
 
 
 
@@ -238,8 +260,8 @@ function update() {
   requestAnimationFrame( update );
   world.step(dt);
   light.position.copy(vehicle.chassisBody.threemesh.position).sub(lightOffset);
-  cameraupd();
-  
+
+  initChaseCam()
   camera.lookAt( vehicle.chassisBody.threemesh.position );
   helper.update( );
   renderer.render( scene, camera );
