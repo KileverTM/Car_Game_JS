@@ -25,7 +25,7 @@ function init(){
   scene.background = new THREE.Color( 0xaaaaff );
   
   camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 1000 );
-  camera.position.set(10, 10, 10);
+  camera.position.set(0, 10, 15);
   
   const ambient = new THREE.HemisphereLight(0x555555, 0xFFFFFF);
   scene.add(ambient);
@@ -129,6 +129,9 @@ function initPhysics(){
   light.target = chassisBody.threemesh;
   lightOffset = chassisBody.threemesh.position.clone().sub(light.position);
 
+ 
+
+
   const options = {
     radius: 0.5,
     directionLocal: new CANNON.Vec3(0, -1, 0),
@@ -169,6 +172,10 @@ function initPhysics(){
   vehicle.addToWorld(world);
 
 
+
+
+
+
         const groundShape = new CANNON.Plane();
         
         const groundBody = new CANNON.Body({mass:0});
@@ -203,14 +210,41 @@ function onWindowResize( event ) {
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
+function cameraupd(){
+    var followCam = new THREE.Object3D();
+       
+        
+        camera.lookAt(vehicle.chassisBody.position);
+        
+        scene.add(followCam);
+        followCam.parent = vehicle.chassisBody.threemesh;
+        helper.shadowTarget = vehicle.chassisBody.threemesh;
+
+        
+    
+
+        
+     
+
+
+
+
+}
+
+
+
+
 function update() {
   requestAnimationFrame( update );
   world.step(dt);
   light.position.copy(vehicle.chassisBody.threemesh.position).sub(lightOffset);
+  cameraupd();
+  
   camera.lookAt( vehicle.chassisBody.threemesh.position );
   helper.update( );
   renderer.render( scene, camera );
 }
+
 
     </script>
 
