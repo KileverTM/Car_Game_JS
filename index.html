@@ -6,39 +6,40 @@
     <meta http-equiv="X-UA-Compatible" content="IE-edge">
     <meta name="viewport" content="with=device-width, intial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/109/three.min.js'></script>
+    <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/2666677/OrbitControls.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js'></script>
+    <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/2666677/CannonHelper.js'></script>
+    <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/2666677/toon3d.js'></script>
     <script type="module">
-        import * as THREE from "../lib/three.module.js";
-        import * as CANNON from "../lib/cannon-es.js";
-        import CannonDebuger from "../lib/cannon-es-debugger.js";
-        import { OrbitControls} from "../lib/OrbitControls.js";
-        import {GLTFLoader} from "../lib/GLTFLoader.js";
+var scene, camera, renderer, world, helper, vehicle, dt, light, lightOffset;
 
-        let scene,camera,renderer;
-        let world, cannonDebuger;
-        let timeStep = 1/60;
-        let groundMaterial;
-        let speederBody, speederMesh;
-        let speed = 0, maxSpeed = 1, acceleration = 0.25, angle = 0;
-        let chaseCam, chaseCamPivot;
-        let view = new THREE.Vector3();
+init();
 
-        initScean();
-        initWorld();
-        initLights();
-        initChaseCam();
+function init(){
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color( 0xaaaaff );
+  
+  camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 1000 );
+  camera.position.set(10, 10, 10);
+  
+  const ambient = new THREE.HemisphereLight(0x555555, 0xFFFFFF);
+  scene.add(ambient);
 
-        createGround();
-        createPlayer();
-        animate();
-        createRamp();
-
-        //=======================================initScean
-        function initScean(){
-            scene = new THREE.Scene();
-            scene.background = new THREE.CubeTextureLoader()
+  light = new THREE.DirectionalLight(0xffffff, 0.5);
+  light.position.set(1,1.25,1.25);
+  light.castShadow = true;
+  const size = 15;
+  light.shadow.left = -size;
+  light.shadow.bottom = -size;
+  light.shadow.right = size;
+  light.shadow.top = size;
+  scene.add(light);
+  scene.background = new THREE.CubeTextureLoader()
             .setPath('../skybox/')
             .load( [
                 'bkg1_right.png',
@@ -48,79 +49,143 @@
                 'bkg1_front.png',
                 'bkg1_back.png',
             ] );
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-            
-        
-
             renderer = new THREE.WebGLRenderer({antialias:true});
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth,window.innerHeight);
             document.body.appendChild(renderer.domElement);
-        //=======================================initWorld
-        }
-        function initWorld(){
-                world = new CANNON.World();
-                world.gravity.set(0,-10,0);
+  
+  initPhysics();
 
-            cannonDebuger = new CannonDebuger(scene,world,{
-                color:0xffffff,
-                scale:1.0,
-            });
+  onWindowResize();
 
-        //=======================================create ground
-        }
-        function createGround(){
-        const Gloader = new GLTFLoader();
-        groundMaterial = new CANNON.Material("groundMaterial");
-        const groundShape = new CANNON.Plane();
-        Gloader.load("../model/tor21.37.gltf",(gltf)=>{
-            speederMesh = gltf.scene;
-            speederMesh.scale.set(1,0.1,1);//x,y,z
+  window.addEventListener( 'resize', onWindowResize, false );
+  const joystick = new JoyStick({
+    game: this,
+    onMove: onMove
+  });
+  
+  update();
+}
+
+
             
-
-    
-            
-            scene.add(speederMesh);})
         
-        const groundBody = new CANNON.Body({mass:0,shape:groundShape,material:groundMaterial});
+
+           
+function onMove( forward, turn ){
+  const maxSteerVal = 0.5;
+  const maxForce = 500;
+  const brakeForce = 5;
+
+  const force = maxForce * forward;
+  const steer = maxSteerVal * -turn;
+
+  if (forward!=0){
+    vehicle.setBrake(0, 0);
+    vehicle.setBrake(0, 1);
+    vehicle.setBrake(0, 2);
+    vehicle.setBrake(0, 3);
+
+    vehicle.applyEngineForce(force, 2);
+    vehicle.applyEngineForce(force, 3);
+  }else{
+    vehicle.setBrake(brakeForce, 0);
+    vehicle.setBrake(brakeForce, 1);
+    vehicle.setBrake(brakeForce, 2);
+    vehicle.setBrake(brakeForce, 3);
+  }
+
+  vehicle.setSteeringValue(steer, 0);
+  vehicle.setSteeringValue(steer, 1); 
+}
+
+function initPhysics(){
+  world = new CANNON.World();
+	helper = new CannonHelper( scene, world );
+  
+  dt = 1/60;
+		
+	world.broadphase = new CANNON.SAPBroadphase(world);
+	world.gravity.set(0, -10, 0);
+  world.defaultContactMaterial.friction = 0;
+
+  const groundMaterial = new CANNON.Material("groundMaterial");
+  const wheelMaterial = new CANNON.Material("wheelMaterial");
+  const wheelGroundContactMaterial = new CANNON.ContactMaterial(wheelMaterial, groundMaterial, {
+    friction: 0.3,
+    restitution: 0,
+    contactEquationStiffness: 1000
+  });
+
+  // We must add the contact materials to the world
+  world.addContactMaterial(wheelGroundContactMaterial);
+
+  const chassisShape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 2));
+  const chassisBody = new CANNON.Body({ mass: 150, material: groundMaterial });
+  chassisBody.angularDamping = 0.9;
+  chassisBody.addShape(chassisShape);
+  chassisBody.position.set(0, 4, 0);
+  helper.addVisual(chassisBody, 0x0000aa, 'car');
+  light.target = chassisBody.threemesh;
+  lightOffset = chassisBody.threemesh.position.clone().sub(light.position);
+
+  const options = {
+    radius: 0.5,
+    directionLocal: new CANNON.Vec3(0, -1, 0),
+    suspensionStiffness: 30,
+    suspensionRestLength: 0.8,
+    frictionSlip: 1,
+    dampingRelaxation: 2.3,
+    dampingCompression: 4.4,
+    maxSuspensionForce: 100000,
+    rollInfluence:  0.01,
+    axleLocal: new CANNON.Vec3(-1, 0, 0),
+    chassisConnectionPointLocal: new CANNON.Vec3(1, 1, 0),
+    maxSuspensionTravel: 0.3,
+    customSlidingRotationalSpeed: 30,
+    useCustomSlidingRotationalSpeed: true
+  };
+
+  // Create the vehicle
+  vehicle = new CANNON.RaycastVehicle({
+    chassisBody: chassisBody,
+    indexRightAxis: 0,
+    indexUpAxis: 1,
+    indexForwardAxis: 2
+  });
+
+  options.chassisConnectionPointLocal.set(1, 0, -1);
+  vehicle.addWheel(options);
+
+  options.chassisConnectionPointLocal.set(-1, 0, -1);
+  vehicle.addWheel(options);
+
+  options.chassisConnectionPointLocal.set(1, 0, 1);
+  vehicle.addWheel(options);
+
+  options.chassisConnectionPointLocal.set(-1, 0, 1);
+  vehicle.addWheel(options);
+
+  vehicle.addToWorld(world);
+
+
+        const groundShape = new CANNON.Plane();
+        
+        const groundBody = new CANNON.Body({mass:0});
+        groundBody.addShape(groundShape);
         groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
+        
         world.addBody(groundBody);
-
-        //=======================================create player
-        }
-        function createPlayer(){
-
-        const speederMaterial = new CANNON.Material("speederMaterial");
-        const slippery_ground_cm = new CANNON.ContactMaterial(groundMaterial,speederMaterial,{
-            friction: 0.5,
-            restitution: 0.5,
-            contactEquationStiffness:1e9,
-            contactEquationRelaxation:3,
-            frictionEquationStiffness:1e5, 
-            frictionEquationRelaxation:3
-        });
-        const speederBodyShape = new CANNON.Box(new CANNON.Vec3(0.8,0.1,0.1));
-        speederBody = new CANNON.Body({mass:10,material:speederMaterial,shape:speederBodyShape});
-        speederBody.position = new CANNON.Vec3(0,2,0);
-        world.addBody(speederBody);
-
-        const Gloader = new GLTFLoader(); 
-        Gloader.load("../model/autko.gltf",(gltf)=>{
-            speederMesh = gltf.scene;
-            speederMesh.scale.set(0.1,0.1,0.1);
-            speederMesh.position.copy(speederBody.position);
-            speederMesh.quaternion.copy(speederBody.quaternion);
-            speederMesh.add(chaseCam);
-            scene.add(speederMesh);
+        helper.addVisual(groundBody, 0x00ff00, 'ground');
 
 
-        })}
-        //=======================================ramp
-        function createRamp(){
-            const rampShape = new CANNON.Box(new CANNON.Vec3(5,1,10));
+
+
+
+        const rampShape = new CANNON.Box(new CANNON.Vec3(5,1,10));
             const rampBody = new CANNON.Body({mass: 0,shape: rampShape, material: groundMaterial});
-            rampBody.position = new CANNON.Vec3(0,1,15);
-            rampBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/12);
+            rampBody.position = new CANNON.Vec3(0,0.5,15);
+            rampBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/20);
             world.addBody(rampBody);
             const rampMat = new THREE.MeshStandardMaterial({color:0xd3c3a2});
             const rampGeo = new THREE.BoxGeometry(10,2,20);
@@ -130,86 +195,22 @@
             rampMash.quaternion.copy(rampBody.quaternion);
 
 
-        }
-        //=======================================key control
-        document.onkeydown=(event) =>{
-            console.log(event);
-            switch(event.key){
-                case "ArrowLeft":
-                    angle += (Math.PI/180)*2;
-                    break;
-                case "ArrowRight":
-                    angle -= (Math.PI/180)*2;
-                    break;
-                case "ArrowUp":
-                    speed += acceleration;
-                    break;
-                case "ArrowDown":
-                    speed -= acceleration;
-                    break;
-            }
-        speederBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0),angle);
-        //======================================moveSpeeder
-        }
-        function moveSpeeder(){
-            if(speed > maxSpeed) speed = maxSpeed;
-            if(speed < 0)speed = 0;
-            speederBody.position.x += speed * Math.sin(angle);
-            speederBody.position.z += speed * Math.cos(angle);
-            if(speederMesh){
-           speederMesh.position.copy(speederBody.position);
-            speederMesh.quaternion.copy(speederBody.quaternion);
-            camera.lookAt(speederMesh.position);
-        }
-    }
-        //=======================================Light
-        function initLights(){
-            const light = new THREE.DirectionalLight();
-            light.position.set(25,200,25);
-            scene.add(light);
+}       
 
+function onWindowResize( event ) {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize( window.innerWidth, window.innerHeight );
+}
 
-
-        }
-        //=======================================animation
-        function animate(){
-            cannonDebuger.update();
-            world.step(timeStep);
-            moveSpeeder();
-            renderer.render(scene,camera);
-            requestAnimationFrame(animate);
-            updateChaseCam();
-        }
-        //========================================update window
-        function onWindowResize(){
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth,window.innerHeight);
-        }
-        window.addEventListener('resize',onWindowResize);
-        //========================================innitChaseCam
-        function initChaseCam(){
-            chaseCam = new THREE.Object3D();
-            chaseCam.position.set(0,0,0);
-
-            chaseCamPivot = new THREE.Object3D();
-            chaseCamPivot.position.set(0,25,-50);
-
-            chaseCam.add(chaseCamPivot);
-
-            scene.add(chaseCam);
-
-        }
-        function updateChaseCam(){
-            chaseCamPivot.getWorldPosition(view);
-            if (view.y < 1) view.y =1;
-            camera.position.lerpVectors(camera.position,view,1);
-
-
-
-        }
-
-
+function update() {
+  requestAnimationFrame( update );
+  world.step(dt);
+  light.position.copy(vehicle.chassisBody.threemesh.position).sub(lightOffset);
+  camera.lookAt( vehicle.chassisBody.threemesh.position );
+  helper.update( );
+  renderer.render( scene, camera );
+}
 
     </script>
 
