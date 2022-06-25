@@ -28,7 +28,7 @@ function init(){
   scene.background = new THREE.Color( 0xaaaaff );
   
   camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 1000 );
-  camera.position.set(0, 10, 15);
+  camera.position.set(0, 5, 15);
   
   const ambient = new THREE.HemisphereLight(0x555555, 0xFFFFFF);
   scene.add(ambient);
@@ -111,34 +111,193 @@ function initPhysics(){
 	world.broadphase = new CANNON.SAPBroadphase(world);
 	world.gravity.set(0, -10, 0);
   world.defaultContactMaterial.friction = 0;
-
   const groundMaterial = new CANNON.Material("groundMaterial");
+
+
+
+
+ 
   const wheelMaterial = new CANNON.Material("wheelMaterial");
   const wheelGroundContactMaterial = new CANNON.ContactMaterial(wheelMaterial, groundMaterial, {
-    friction: 0.3,
-    restitution: 0,
+    friction: 2,
+    restitution: 1,
     contactEquationStiffness: 1000
   });
 
-  // We must add the contact materials to the world
+  
   world.addContactMaterial(wheelGroundContactMaterial);
 
   const chassisShape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 2));
-  const chassisShape1 = new CANNON.Box(new CANNON.Vec3(0.5, 0.25, 0.5));
+  const chassisShape1 = new CANNON.Box(new CANNON.Vec3(0.95, 0.5, 1.20));
   const chassisBody = new CANNON.Body({ mass: 150, material: groundMaterial });
   chassisBody.angularDamping = 0.9;
   chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.01, 0));
-  chassisBody.addShape(chassisShape1, new CANNON.Vec3(0, 0.5, 0));
+  chassisBody.addShape(chassisShape1, new CANNON.Vec3(0, 0.5, 1));
   chassisBody.position.set(0, 4, 0);
   helper.addVisual(chassisBody, 0x0000aa, 'car');
-  helper.addVisual(chassisShape1, 0x000000, 'car1');
   light.target = chassisBody.threemesh;
   lightOffset = chassisBody.threemesh.position.clone().sub(light.position);
   followCam = new THREE.Object3D();
     followCam.position.copy(camera.position);
 	scene.add(followCam);
 	followCam.parent = chassisBody.threemesh;
+
+
+//podstawa
+  const groundShape = new CANNON.Plane();
+        
+        const groundBody = new CANNON.Body({mass:0});
+        groundBody.addShape(groundShape);
+        groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
+        
+        world.addBody(groundBody);
+        //helper.addVisual(groundBody, 0x00ff00, 'ground');
+        const textureLoader = new THREE.TextureLoader();
+        const grassNormalMap = textureLoader.load("../texture/grass_normal_map.png");       
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(500, 500, 1), new THREE.MeshPhongMaterial({ color: 0x0a7d15, normalMap: grassNormalMap }));
+plane.rotation.x = - Math.PI / 2
+plane.material.normalMap.wrapS = plane.material.normalMap.wrapT = THREE.RepeatWrapping
+plane.material.normalMap.repeat.x = plane.material.normalMap.repeat.y = 5
+scene.add(plane);
        
+
+
+
+
+//piłka
+
+  const sphereGeometry = new THREE.SphereGeometry()
+            const sphereShape = new CANNON.Sphere(2)
+            const sphereBody = new CANNON.Body({ mass: 1 })
+            sphereBody.addShape(sphereShape)
+            sphereBody.position.x = -118
+            sphereBody.position.y = 5
+            sphereBody.position.z = -50
+            world.addBody(sphereBody)
+            helper.addVisual(sphereBody,0x100410,'smolensk')
+
+
+
+//sciana
+const wall1 = new CANNON.Box(new CANNON.Vec3(300, 20, 2));
+const wall2 = new CANNON.Box(new CANNON.Vec3(2, 20, 300));
+const normalMaterial = new THREE.MeshNormalMaterial()
+
+
+  const wall1Body = new CANNON.Body({mass:0,material:groundMaterial});
+  const wall2Body = new CANNON.Body({mass:0,material:groundMaterial});
+  const wall3Body = new CANNON.Body({mass:0,material:groundMaterial});
+  const wall4Body = new CANNON.Body({mass:0,material:groundMaterial});
+
+  wall1Body.addShape(wall1,new CANNON.Vec3(0,0,200))
+  wall2Body.addShape(wall1,new CANNON.Vec3(0,0,-200))
+  wall3Body.addShape(wall2,new CANNON.Vec3(200,0,0))
+  wall4Body.addShape(wall2,new CANNON.Vec3(-200,0,0))
+
+  helper.addVisual(wall1Body,0x002137,'wall');
+  helper.addVisual(wall2Body,0x002137,'wall');
+  helper.addVisual(wall3Body,0x002137,'wall');
+  helper.addVisual(wall4Body,0x002137,'wall');
+//bramka
+const hoopRamp = new CANNON.Box(new CANNON.Vec3(6,6.5,0.5));
+const hoopSide = new CANNON.Box(new CANNON.Vec3(0.5,5,0.5));
+
+const hoopRampBody = new CANNON.Body({mass:0});
+const hoopSide1Body = new CANNON.Body({mass:0});
+const hoopSide2Body = new CANNON.Body({mass:0});
+
+hoopRampBody.addShape(hoopRamp)
+  hoopRampBody.position.x = -118
+  hoopRampBody.position.y = 5
+  hoopRampBody.position.z = -104
+  hoopRampBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),Math.PI/4);
+hoopSide1Body.addShape(hoopSide)
+  hoopSide1Body.position.x = -112
+  hoopSide1Body.position.y = 5
+  hoopSide1Body.position.z = -100
+hoopSide2Body.addShape(hoopSide)
+  hoopSide2Body.position.x = -124
+  hoopSide2Body.position.y = 5
+  hoopSide2Body.position.z = -100
+    
+
+
+helper.addVisual(hoopRampBody,0xfffffff,'ramp')
+helper.addVisual(hoopSide1Body,0x000000,'side')
+helper.addVisual(hoopSide2Body,0x000000,'side')
+
+
+world.addBody(hoopRampBody)
+world.addBody(hoopSide1Body)
+world.addBody(hoopSide2Body)
+
+
+
+
+
+
+
+
+//klocki
+  const Boxbowling = new CANNON.Box(new CANNON.Vec3(5,5,5));
+
+  const Boxbowling1Body = new CANNON.Body({mass:100});
+  const Boxbowling2Body = new CANNON.Body({mass:100});
+  const Boxbowling3Body = new CANNON.Body({mass:100});
+  const Boxbowling4Body = new CANNON.Body({mass:100});
+  const Boxbowling5Body = new CANNON.Body({mass:100});
+  const Boxbowling6Body = new CANNON.Body({mass:100});
+
+  Boxbowling1Body.addShape(Boxbowling)
+      Boxbowling1Body.position.x = 100
+      Boxbowling1Body.position.y = 5
+      Boxbowling1Body.position.z = -100
+  Boxbowling2Body.addShape(Boxbowling)
+      Boxbowling2Body.position.x = 112
+      Boxbowling2Body.position.y = 5
+      Boxbowling2Body.position.z = -100
+  Boxbowling3Body.addShape(Boxbowling)
+      Boxbowling3Body.position.x = 124
+      Boxbowling3Body.position.y = 5
+      Boxbowling3Body.position.z = -100
+  Boxbowling4Body.addShape(Boxbowling)
+      Boxbowling4Body.position.x = 108
+      Boxbowling4Body.position.y = 15
+      Boxbowling4Body.position.z = -100
+  Boxbowling5Body.addShape(Boxbowling)
+      Boxbowling5Body.position.x = 118
+      Boxbowling5Body.position.y = 15
+      Boxbowling5Body.position.z = -100
+  Boxbowling6Body.addShape(Boxbowling)
+      Boxbowling6Body.position.x = 112
+      Boxbowling6Body.position.y = 25
+      Boxbowling6Body.position.z = -100
+  
+
+  helper.addVisual(Boxbowling1Body,0x210037,'box')
+  helper.addVisual(Boxbowling2Body,0x210037,'box')
+  helper.addVisual(Boxbowling3Body,0x110009,'box')
+  helper.addVisual(Boxbowling4Body,0xb91abb,'box')
+  helper.addVisual(Boxbowling5Body,0x6f2644,'box')
+  helper.addVisual(Boxbowling6Body,0x5d6a69,'box')
+
+  world.addBody(Boxbowling1Body)
+  world.addBody(Boxbowling2Body)
+  world.addBody(Boxbowling3Body)
+  world.addBody(Boxbowling4Body)
+  world.addBody(Boxbowling5Body)
+  world.addBody(Boxbowling6Body)
+
+
+
+
+
+
+
+
+  
+
+
 
 
 
@@ -183,6 +342,13 @@ function initPhysics(){
 
   vehicle.addToWorld(world);
   
+ 
+  world.addBody(wall1Body);
+  world.addBody(wall2Body);
+  world.addBody(wall3Body);
+  world.addBody(wall4Body);
+
+  
 
 const wheelBodies = [];
 vehicle.wheelInfos.forEach( function(wheel){
@@ -213,14 +379,7 @@ world.addEventListener('postStep', function(){
 
 
 
-        const groundShape = new CANNON.Plane();
-        
-        const groundBody = new CANNON.Body({mass:0});
-        groundBody.addShape(groundShape);
-        groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
-        
-        world.addBody(groundBody);
-        helper.addVisual(groundBody, 0x00ff00, 'ground');
+
 
 
 
@@ -260,6 +419,7 @@ function update() {
   requestAnimationFrame( update );
   world.step(dt);
   light.position.copy(vehicle.chassisBody.threemesh.position).sub(lightOffset);
+
 
   initChaseCam()
   camera.lookAt( vehicle.chassisBody.threemesh.position );
