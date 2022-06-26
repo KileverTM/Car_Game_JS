@@ -189,6 +189,39 @@ function initPhysics(){
 
 
 
+
+            const sphereGeometry1 = new THREE.SphereGeometry()
+            const sphereShape1 = new CANNON.Sphere(2)
+            const sphereBody1 = new CANNON.Body({ mass: 1 })
+            sphereBody1.addShape(sphereShape1)
+            sphereBody1.position.x = -118
+            sphereBody1.position.y = 5
+            sphereBody1.position.z = 50
+            world.addBody(sphereBody1)
+            helper.addVisual(sphereBody1,0x5f061f,'smolensk')
+
+            const sphereGeometry2 = new THREE.SphereGeometry()
+            const sphereShape2 = new CANNON.Sphere(2)
+            const sphereBody2 = new CANNON.Body({ mass: 1 })
+            sphereBody2.addShape(sphereShape2)
+            sphereBody2.position.x = -118
+            sphereBody2.position.y = 5
+            sphereBody2.position.z = 60
+            world.addBody(sphereBody2)
+            helper.addVisual(sphereBody2,0xd432a5,'smolensk')
+
+            const sphereGeometry3 = new THREE.SphereGeometry()
+            const sphereShape3 = new CANNON.Sphere(2)
+            const sphereBody3 = new CANNON.Body({ mass: 1 })
+            sphereBody3.addShape(sphereShape3)
+            sphereBody3.position.x = -118
+            sphereBody3.position.y = 5
+            sphereBody3.position.z = 70
+            world.addBody(sphereBody3)
+            helper.addVisual(sphereBody3,0xa7775f,'smolensk')
+
+
+
 //sciana
 const wall1 = new CANNON.Box(new CANNON.Vec3(300, 40, 2));
 const wall2 = new CANNON.Box(new CANNON.Vec3(2, 40, 300));
