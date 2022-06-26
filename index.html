@@ -16,9 +16,20 @@
     <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/2666677/CannonHelper.js'></script>
     <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/2666677/toon3d.js'></script>
     <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
+    <img id ="reset" scr="../reset.png" alt="reset">
     <script type="module">
 var scene, camera, renderer, world, helper, vehicle, dt, light, lightOffset;
 let chaseCam, chaseCamPivot,car,followCam;
+
+
+const reset = document.getElementById("reset");
+reset.addEventListener("click",function(){
+  vehicle.chassisBody.position.set(0,5,0)
+  vehicle.chassisBody.velocity.set(0,0,0);
+  vehicle.chassisBody.angularVelocity.set(0,0,0);
+  vehicle.chassisBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/20);
+});
+
 
 
 init();
@@ -119,9 +130,9 @@ function initPhysics(){
  
   const wheelMaterial = new CANNON.Material("wheelMaterial");
   const wheelGroundContactMaterial = new CANNON.ContactMaterial(wheelMaterial, groundMaterial, {
-    friction: 2,
-    restitution: 1,
-    contactEquationStiffness: 1000
+    friction: 200,
+    restitution: 5,
+    contactEquationStiffness: 10000
   });
 
   
@@ -231,7 +242,26 @@ world.addBody(hoopRampBody)
 world.addBody(hoopSide1Body)
 world.addBody(hoopSide2Body)
 
+//tony hoope
+const TonyhoopRamp = new CANNON.Box(new CANNON.Vec3(40,10,2));
 
+
+const TonyhoopRampBody = new CANNON.Body({mass:0});
+
+
+TonyhoopRampBody.addShape(TonyhoopRamp)
+TonyhoopRampBody.position.x = 118
+TonyhoopRampBody.position.y = 0
+TonyhoopRampBody.position.z = 104
+TonyhoopRampBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/4);
+
+
+
+helper.addVisual(TonyhoopRampBody,0xfffffff,'Tonyramp')
+
+
+
+world.addBody(TonyhoopRampBody)
 
 
 
@@ -352,7 +382,7 @@ world.addBody(hoopSide2Body)
 
 const wheelBodies = [];
 vehicle.wheelInfos.forEach( function(wheel){
-  const cylinderShape = new CANNON.Cylinder(wheel.radius, wheel.radius, wheel.radius / 2, 20);
+  const cylinderShape = new CANNON.Cylinder(wheel.radius, wheel.radius, wheel.radius , 20);
   const wheelBody = new CANNON.Body({ mass: 1, material: wheelMaterial });
   const q = new CANNON.Quaternion();
   q.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);

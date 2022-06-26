@@ -6,3 +6,18 @@ html {
     overflow: hidden;
     background: #000;
 }
+#reset{
+    position: absolute;
+    background: #217;
+    opacity: 0.5;
+    width: 2.5rem;
+    height: 2.5rem;
+    bottom: 1rem;
+    right: 1rem;
+    border-radius: 10px ;
+}
+#reset:hover {
+    opacity: 1.0;
+    background: #039;
+
+}
