@@ -11,13 +11,16 @@ html {
     background: #217;
     opacity: 0.5;
     width: 2.5rem;
-    height: 2.5rem;
+    height: 1.25rem;
     bottom: 1rem;
     right: 1rem;
+    padding: 3px;
     border-radius: 10px ;
+    text-align: center;
+    color: white;
 }
 #reset:hover {
     opacity: 1.0;
-    background: #039;
-
+    background: white;
+    color: black;
 }
