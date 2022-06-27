@@ -220,6 +220,16 @@ function initPhysics(){
             world.addBody(sphereBody3)
             helper.addVisual(sphereBody3,0xa7775f,'smolensk')
 
+            const sphereGeometry4 = new THREE.SphereGeometry()
+            const sphereShape4 = new CANNON.Sphere(2)
+            const sphereBody4 = new CANNON.Body({ mass: 1 })
+            sphereBody4.addShape(sphereShape4)
+            sphereBody4.position.x = -118
+            sphereBody4.position.y = 5
+            sphereBody4.position.z = 80
+            world.addBody(sphereBody4)
+            helper.addVisual(sphereBody4,0xa7775f,'smolensk')
+
 
 
 //sciana
